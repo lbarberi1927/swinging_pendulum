@@ -14,15 +14,10 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-"""random.seed(420)
-np.random.seed(420)
-torch.manual_seed(420)"""
-
 
 class NeuralNetwork(nn.Module):
     """
     This class implements a neural network with a variable number of hidden layers and hidden units.
-    You may use this function to parametrize your policy and critic networks.
     """
 
     def __init__(
@@ -35,9 +30,6 @@ class NeuralNetwork(nn.Module):
     ):
         super(NeuralNetwork, self).__init__()
 
-        # TODO: Implement this function which should define a neural network
-        # with a variable number of hidden layers and hidden units.
-        # Here you should define layers which your network will use.
         activation_fn = nn.ReLU()
 
         self.model = nn.Sequential()
@@ -54,11 +46,13 @@ class NeuralNetwork(nn.Module):
         # model.add_module("softmax", nn.Tanh())
 
     def forward(self, s: torch.Tensor) -> torch.Tensor:
-        # TODO: Implement the forward pass for the neural network you have defined.
         return self.model(s)
 
 
 class Actor:
+    """
+    This class implements the actor in the SAC algorithm for RL
+    """
     def __init__(
         self,
         hidden_size: int,
@@ -86,8 +80,6 @@ class Actor:
         """
         This function sets up the actor network in the Actor class.
         """
-        # TODO: Implement this function which sets up the actor network.
-        # Take a look at the NeuralNetwork class in utils.py.
         self.actor_network = NeuralNetwork(
             input_dim=self.state_dim,
             output_dim=2,
@@ -120,10 +112,6 @@ class Actor:
         assert (
             state.shape == (3,) or state.shape[1] == self.state_dim
         ), "State passed to this method has a wrong shape"
-        # action, log_prob = torch.zeros(state.shape[0]), torch.ones(state.shape[0])
-        # TODO: Implement this function which returns an action and its log probability.
-        # If working with stochastic policies, make sure that its log_std are clamped
-        # using the clamp_log_std function.
 
         forward_pass = self.actor_network(state)
         try:
@@ -162,6 +150,9 @@ class Actor:
 
 
 class Critic:
+    """
+    This class implements the Critic in the SAC algorithm for RL, using a network for the Q value and one for a target Q
+    """
     def __init__(
         self,
         hidden_size: int,
@@ -183,8 +174,6 @@ class Critic:
         self.optimizer = optim.Adam(list(self.qnetwork.parameters()), lr=self.critic_lr)
 
     def setup_critic(self):
-        # TODO: Implement this function which sets up the critic(s). Take a look at the NeuralNetwork
-        # class in utils.py. Note that you can have MULTIPLE critic networks in this class.
         self.qnetwork = NeuralNetwork(
             input_dim=self.state_dim + self.action_dim,
             output_dim=1,
@@ -205,8 +194,8 @@ class Critic:
 
 class TrainableParameter:
     """
-    This class could be used to define a trainable parameter in your method. You could find it
-    useful if you try to implement the entropy temerature parameter for SAC algorithm.
+    This class could be used to define a trainable parameter. Could be useful for the entropy temperature parameter
+    for SAC algorithm.
     """
 
     def __init__(
@@ -229,15 +218,16 @@ class TrainableParameter:
 
 
 class Agent:
+    """
+    Class to implement the agent that applies force to the swinging pendulum
+    """
     def __init__(self):
-        # Environment variables. You don't need to change this.
+        # Environment variables
         self.state_dim = 3  # [cos(theta), sin(theta), theta_dot]
         self.action_dim = 1  # [torque] in[-1,1]
         self.batch_size = 200
         self.min_buffer_size = 1000
         self.max_buffer_size = 100000
-        # If your PC possesses a GPU, you should be able to use it for training,
-        # as self.device should be 'cuda' in that case.
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Using device: {}".format(self.device))
         self.memory = ReplayBuffer(
@@ -258,8 +248,9 @@ class Agent:
         self.setup_agent()
 
     def setup_agent(self):
-        # TODO: Setup off-policy agent with policy and critic classes.
-        # Feel free to instantiate any other parameters you feel you might need.
+        """
+        Setup off-policy agent with policy and critic classes.
+        """
         lr = self.unique_lr
         hidden = 256
         layers = 2
@@ -282,12 +273,11 @@ class Agent:
 
     def get_action(self, s: np.ndarray, train: bool) -> np.ndarray:
         """
+        Returns an action from the policy for state s
         :param s: np.ndarray, state of the pendulum. shape (3, )
         :param train: boolean to indicate if you are in eval or train mode.
-                    You can find it useful if you want to sample from deterministic policy.
         :return: np.ndarray,, action to apply on the environment, shape (1,)
         """
-        # TODO: Implement a function that returns an action from the policy for the state s.
         state = torch.Tensor(s).to(self.device)
         forward = self.actor.actor_network(state)
         mean, log_std = forward.split(self.action_dim)
@@ -307,9 +297,8 @@ class Agent:
     @staticmethod
     def run_gradient_update_step(object: Union[Actor, Critic], loss: torch.Tensor):
         """
-        This function takes in a object containing trainable parameters and an optimizer,
-        and using a given loss, runs one step of gradient update. If you set up trainable parameters
-        and optimizer inside the object, you could find this function useful while training.
+        This function takes in an object containing trainable parameters and an optimizer,
+        and using a given loss, runs one step of gradient update.
         :param object: object containing trainable parameters and an optimizer
         """
         object.optimizer.zero_grad()
@@ -345,15 +334,10 @@ class Agent:
         from the replay buffer,and then updates the policy and critic networks
         using the sampled batch.
         """
-        # TODO: Implement one step of training for the agent.
-        # Hint: You can use the run_gradient_update_step for each policy and critic.
-        # Example: self.run_gradient_update_step(self.policy, policy_loss)
-
         # Batch sampling
         batch = self.memory.sample(self.batch_size)
         s_batch, a_batch, r_batch, s_prime_batch = batch
 
-        # TODO: Implement Critic(s) update here.
         # Critic loss
         with torch.no_grad():
             alpha = self.alpha.get_param()
@@ -376,7 +360,6 @@ class Agent:
         self.run_gradient_update_step(self.critic_1, q1_loss)
         self.run_gradient_update_step(self.critic_2, q2_loss)
 
-        # TODO: Implement Policy update here
         # Policy loss
         state_actions, log_probs = self.actor.get_action_and_log_prob(
             s_batch, deterministic=False
@@ -421,14 +404,11 @@ class Agent:
 
 
 # This main function is provided here to enable some basic testing.
-# ANY changes here WON'T take any effect while grading.
 if __name__ == "__main__":
     TRAIN_EPISODES = 50
     TEST_EPISODES = 300
 
-    # You may set the save_video param to output the video of one of the evalution episodes, or
-    # you can disable console printing during training and testing by setting verbose to False.
-    save_video = False
+    save_video = True
     verbose = True
 
     agent = Agent()

@@ -1,9 +1,6 @@
 """
-This file contains the Pendulum environment, as well as couple of useful functions,
-which you can use for the assignment.
+This file contains the Pendulum environment, as well as couple of useful functions.
 
-IMPORTANT NOTE: CHANGING THIS FILE OR YOUR LOCAL EVALUATION MIGHT NOT WORK. CHANGING THIS FILE WON'T
-AFFECT YOUR SUBMISSION RESULT IN THE CHECKER. 
 
 """
 from typing import Optional
