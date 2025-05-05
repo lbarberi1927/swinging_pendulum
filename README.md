@@ -17,6 +17,10 @@ Soft Actor-Critic (SAC) is an off-policy actor-critic algorithm that optimizes a
 The video below shows the pendulum being swung up and stabilized by the trained SAC agent:
 
 
+https://github.com/user-attachments/assets/b9505307-8f9d-4d56-837e-d51cb0bd1bfb
+
+
+
 ## Installation
 To set up the environment and install dependencies, run:
 
